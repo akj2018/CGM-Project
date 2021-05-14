@@ -1,2 +1,2 @@
 # CGM-Project
-<h2>Zombie.py contains all the main code for the project</h2>
+<h3> <b>NOTE:</b> Zombie.py contains all the main code for the project</h2>
