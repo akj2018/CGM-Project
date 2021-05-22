@@ -32,7 +32,7 @@ WINDOWWIDTH = 1024
 WINDOWHEIGHT = 600
 FPS = 60
 
-MAXGOTTENPASS = 10
+MAXGOTTENPASS = 3
 ZOMBIESIZE = 110 #includes newKindZombies
 ADDNEWZOMBIERATE = 60
 ADDNEWKINDZOMBIE = ADDNEWZOMBIERATE
@@ -43,6 +43,8 @@ NEWKINDZOMBIESPEED = NORMALZOMBIESPEED / 2
 PLAYERMOVERATE = 15
 BULLETSPEED = 10
 ADDNEWBULLETRATE = 15
+MAXBULLETSPEED = 20
+MINNEWBULLETRATE = 8
 
 TEXTCOLOR = (255, 255, 255)
 RED = (255, 0, 0)
@@ -70,14 +72,14 @@ def playerHasHitZombie(playerRect, zombies):
 			return True
 	return False
 
-def bulletHasHitZombie(bullets, zombies):
+def bulletHasHitZombie(bullets, z):
 	for b in bullets:
 		if b['rect'].colliderect(z['rect']):
 			bullets.remove(b)
 			return True
 	return False
 
-def bulletHasHitCrawler(bullets, newKindZombies):
+def bulletHasHitCrawler(bullets, c):
 	for b in bullets:
 		if b['rect'].colliderect(c['rect']):
 			bullets.remove(b)
@@ -90,9 +92,9 @@ def drawText(text, font, surface, x, y):
 	textrect.topleft = (x, y)
 	surface.blit(textobj, textrect)
 
-def rotate(surface, angle):
+def rotate(surface, rect, angle):
 	rotated_surface = pygame.transform.rotozoom(surface,angle,1)
-	rotated_rect = rotated_surface.get_rect(center = (600,300))
+	rotated_rect = rotated_surface.get_rect(center = rect.center)
 	return rotated_surface,rotated_rect
 
 def plant_touches_sun(playerRect, sunRect):
@@ -126,9 +128,9 @@ zombieImage = pygame.image.load('Normal.gif')
 
 newKindZombieImage = pygame.image.load('ConeheadZombieAttack.png')
 
-sunImage = pygame.image.load("Sun.png")
-sunImage = pygame.transform.scale(sunImage,(75,75))
-sunRect = sunImage.get_rect(center=(600,300))
+#sunImage = pygame.image.load("Sun.png")
+#sunImage = pygame.transform.scale(sunImage,(75,75))
+#sunRect = sunImage.get_rect(center=(600,300))
 
 
 backgroundImage = pygame.image.load('background_2.jpg')
@@ -138,8 +140,10 @@ rescaledBackground = pygame.transform.scale(backgroundImage, (WINDOWWIDTH + 100,
 # show the "Start" screen
 windowSurface.blit(rescaledBackground, (0, 0))
 windowSurface.blit(playerImage, (WINDOWWIDTH / 2, WINDOWHEIGHT - 70))
-drawText('Zombie Defence By handsomestone', font, windowSurface, (WINDOWWIDTH / 4), (WINDOWHEIGHT / 4))
-drawText('Press Enter to start', font, windowSurface, (WINDOWWIDTH / 3) - 10, (WINDOWHEIGHT / 3) + 50)
+drawText('Plants Vs Zombies', font, windowSurface, (WINDOWWIDTH / 4) + 80, (WINDOWHEIGHT / 4))
+drawText('Press Enter to start', font, windowSurface, (WINDOWWIDTH / 4) + 80, (WINDOWHEIGHT / 3) + 50)
+drawText("Don't let 3 zombies touch the left side!", font, windowSurface, (WINDOWWIDTH / 4) - 60, (WINDOWHEIGHT / 3) + 120)
+drawText("Don't hit the zombie!", font, windowSurface, (WINDOWWIDTH / 4) + 80, (WINDOWHEIGHT / 3) + 160)
 pygame.display.update()
 waitForPlayerToPressKey()
 
@@ -154,6 +158,9 @@ while True:
 
 	zombiesGottenPast = 0
 	score = 0
+	Level = 1
+	Level_inc=True
+	Level_change=20
 
 	playerRect.topleft = (50, WINDOWHEIGHT /2)
 	moveLeft = moveRight = False
@@ -163,6 +170,21 @@ while True:
 	zombieAddCounter = 0
 	newKindZombieAddCounter = 0
 	bulletAddCounter = 40
+
+	newSunTime=600
+	newSunRange=[600,1200]
+	sunTime=0
+	sunHorizontalRange=[60,WINDOWWIDTH-80]
+	sunVerticalRange=[60,WINDOWHEIGHT-40]
+	sunDrop=0
+	sunDropSpeed=5
+	sunAlpha=30
+	sun=0
+	sunappear=0
+	sunLimit=600
+	ADDNEWBULLETRATE=15
+	BULLETSPEED=10
+
 	pygame.mixer.music.play(-1, 0.0)
 
 
@@ -235,6 +257,22 @@ while True:
 						}
 			bullets.append(newBullet)
 
+		# add new sun
+		sunTime+=1
+		if sunTime == newSunTime:
+			if sun!=0:
+				sunTime=0
+			else:
+				sunHorizontal=random.randint(sunHorizontalRange[0],sunHorizontalRange[1])
+				sunVertical=random.randint(sunVerticalRange[0],sunVerticalRange[1])
+				sunImage = pygame.image.load("Sun.png")
+				sunImage = pygame.transform.scale(sunImage,(75,75))
+				sunRect = sunImage.get_rect(center=(sunHorizontal,sunDrop))
+				sun=1
+				newSunTime=random.randint(newSunRange[0],newSunRange[1])
+				sunAlphaSpeed=(255-30)//(sunVertical//sunDropSpeed)
+				#print(sunRect)
+
 		# Move the player around.
 		if moveUp and playerRect.top > 30:
 			playerRect.move_ip(0,-1 * PLAYERMOVERATE)
@@ -275,19 +313,40 @@ while True:
 				
 		# check if the bullet has hit the zombie
 		for z in zombies:
-			if bulletHasHitZombie(bullets, zombies):
+			if bulletHasHitZombie(bullets, z):
 				score += 1
 				zombies.remove(z)
 	
 		for c in newKindZombies:
-			if bulletHasHitCrawler(bullets, newKindZombies):
+			if bulletHasHitCrawler(bullets, c):
 				score += 1
 				newKindZombies.remove(c)      
 
 		# check for collission of plant and sun
-		if plant_touches_sun(playerRect,sunRect):
-			sunImage = None
-			sunRect = None
+		if sun==2 and plant_touches_sun(playerRect,sunRect):
+			if ADDNEWBULLETRATE>MINNEWBULLETRATE:
+				ADDNEWBULLETRATE-=2
+			if BULLETSPEED<MAXBULLETSPEED:
+				BULLETSPEED+=4
+			sun=0
+			sunTime=0
+			sunAlpha=30
+			score+=10
+			sunDrop=0
+			sunappear=0
+			#print('sun')
+
+		if score!=0 and score%Level_change==0 and Level_inc:
+			Level+=1
+			Level_inc=False 
+			if ADDNEWZOMBIERATE>15:
+				ADDNEWZOMBIERATE-=2
+			if ADDNEWKINDZOMBIE>15:
+				ADDNEWKINDZOMBIE-=2
+		elif score%Level_change!=0 and not Level_inc:
+			Level_inc=True
+
+		
 		
 		rel_x = x_coordinate % rescaledBackground.get_rect().width
 		# Draw the game world on the window.
@@ -299,10 +358,36 @@ while True:
 		# Draw the player's rectangle, rails
 		windowSurface.blit(playerImage, playerRect)
 		
+		# drop sun
+		if sun==1:
+			if sunDrop<sunVertical:
+				if sunDrop+sunDropSpeed<sunVertical:
+					sunDrop+=sunDropSpeed
+				else:
+					sunDrop=sunVertical
+			else:
+				sun=2
+			if sunAlpha+sunAlphaSpeed<255:
+				sunAlpha+=sunAlphaSpeed
+			else:
+				sunAlpha=255
+			sunImage.set_alpha(sunAlpha)
+			sunRect=sunImage.get_rect(center=(sunHorizontal,sunDrop))
+			windowSurface.blit(sunImage,sunRect)
+
 		# draw sun
-		angle = angle + 1
-		sun_rotated, sun_rotated_rect = rotate(sunImage,angle)
-		windowSurface.blit(sun_rotated,sun_rotated_rect)
+		if sun==2:
+			sunappear+=1
+			if sunappear>=sunLimit:
+				sun=0
+				sunTime=0
+				sunAlpha=30
+				sunDrop=0
+				sunappear=0
+			angle = angle + 1
+			sunImage.set_alpha(255)
+			sun_rotated, sun_rotated_rect = rotate(sunImage,sunRect,angle)
+			windowSurface.blit(sun_rotated,sun_rotated_rect)
 
 		
 
@@ -322,6 +407,7 @@ while True:
 		# Draw the score and how many zombies got past
 		drawText('zombies gotten past: %s' % (zombiesGottenPast), font, windowSurface, 10, 20)
 		drawText('score: %s' % (score), font, windowSurface, 10, 50)
+		drawText('Level: %s' % (Level),font,windowSurface,800,20)
 
 		# update the display
 		pygame.display.update()
@@ -330,7 +416,7 @@ while True:
 		if playerHasHitZombie(playerRect, zombies):
 			break
 		if playerHasHitZombie(playerRect, newKindZombies):
-		   break
+			break
 		
 		# check if score is over MAXGOTTENPASS which means game over
 		if zombiesGottenPast >= MAXGOTTENPASS:
@@ -346,7 +432,8 @@ while True:
 		windowSurface.blit(rescaledBackground, (0, 0))
 		windowSurface.blit(playerImage, (WINDOWWIDTH / 2, WINDOWHEIGHT - 70))
 		drawText('score: %s' % (score), font, windowSurface, 10, 30)
-		drawText('GAME OVER', font, windowSurface, (WINDOWWIDTH / 3), (WINDOWHEIGHT / 3))
+		drawText('Level: %s' % (Level), font, windowSurface, 800, 30)
+		drawText('GAME OVER', font, windowSurface, (WINDOWWIDTH / 3) + 40, (WINDOWHEIGHT / 3))
 		drawText('YOUR COUNTRY HAS BEEN DESTROIED', font, windowSurface, (WINDOWWIDTH / 4)- 80, (WINDOWHEIGHT / 3) + 100)
 		drawText('Press enter to play again or escape to exit', font, windowSurface, (WINDOWWIDTH / 4) - 80, (WINDOWHEIGHT / 3) + 150)
 		pygame.display.update()
@@ -355,9 +442,20 @@ while True:
 		windowSurface.blit(rescaledBackground, (0, 0))
 		windowSurface.blit(playerImage, (WINDOWWIDTH / 2, WINDOWHEIGHT - 70))
 		drawText('score: %s' % (score), font, windowSurface, 10, 30)
-		drawText('GAME OVER', font, windowSurface, (WINDOWWIDTH / 3), (WINDOWHEIGHT / 3))
-		drawText('YOU HAVE BEEN KISSED BY THE ZOMMBIE', font, windowSurface, (WINDOWWIDTH / 4) - 80, (WINDOWHEIGHT / 3) +100)
-		drawText('Press enter to play again or escape to exit', font, windowSurface, (WINDOWWIDTH / 4) - 80, (WINDOWHEIGHT / 3) + 150)
+		drawText('Level: %s' % (Level), font, windowSurface, 800, 30)
+		drawText('GAME OVER', font, windowSurface, (WINDOWWIDTH / 3)+40, (WINDOWHEIGHT / 3))
+		drawText('YOU HAVE BEEN KISSED BY THE ZOMMBIE', font, windowSurface, (WINDOWWIDTH / 4) - 110, (WINDOWHEIGHT / 3) +100)
+		drawText('Press enter to play again or escape to exit', font, windowSurface, (WINDOWWIDTH / 4) - 90, (WINDOWHEIGHT / 3) + 150)
+		pygame.display.update()
+		waitForPlayerToPressKey()
+	if playerHasHitZombie(playerRect, newKindZombies):
+		windowSurface.blit(rescaledBackground, (0, 0))
+		windowSurface.blit(playerImage, (WINDOWWIDTH / 2, WINDOWHEIGHT - 70))
+		drawText('score: %s' % (score), font, windowSurface, 10, 30)
+		drawText('Level: %s' % (Level), font, windowSurface, 800, 30)
+		drawText('GAME OVER', font, windowSurface, (WINDOWWIDTH / 3)+40, (WINDOWHEIGHT / 3))
+		drawText('YOU HAVE BEEN KISSED BY THE ZOMMBIE', font, windowSurface, (WINDOWWIDTH / 4) - 110, (WINDOWHEIGHT / 3) +100)
+		drawText('Press enter to play again or escape to exit', font, windowSurface, (WINDOWWIDTH / 4) - 90, (WINDOWHEIGHT / 3) + 150)
 		pygame.display.update()
 		waitForPlayerToPressKey()
 	gameOverSound.stop()
