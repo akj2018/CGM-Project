@@ -9,9 +9,9 @@ __NOTE: Zombie.py contains all the main code for the project__
 - [x] Background (Trees - Grass type landscape - clouds) Continuously changing
 - [x] Plant (currently) shoots pea.
 - [x] Plant can move in all four directions with some padding from the screen.
-- [ ] Upgrade its speed and pea size increases on touching SUN power
-- [ ]  SUN power randomly appearing on screen for a limited time.
-- [ ]  Score = no. of zombie kills + 10 points for sun
+- [x] Upgrade its speed and pea size increases on touching SUN power
+- [x] SUN power randomly appearing on screen for a limited time.
+- [x] Score = no. of zombie kills + 10 points for sun
 
 ## Changes Done By Akshay
 1. Zombie Scaling and Speed Control
@@ -20,8 +20,13 @@ __NOTE: Zombie.py contains all the main code for the project__
 4. Plant can move in all four directions with some padding from the screen.
 
 ## Changes Done By Shubham
+1. Upgrade its speed and pea size increases on touching SUN power
+2. SUN power randomly appearing on screen for a limited time.
+3. Score = no. of zombie kills + 10 points for sun.
 
 ## Changes Done By Shreya
+1. Code Cleaning
+2. Code Debugging
 
 ## Installation
 
